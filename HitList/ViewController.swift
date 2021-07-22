@@ -11,7 +11,7 @@ import CoreData
 class ViewController: UIViewController {
     
     static let reuseId = "Cell"
-//    private var names: [String] = []
+    //    private var names: [String] = []
     private var people: [NSManagedObject] = []
     
     @IBOutlet weak var tableView: UITableView!
@@ -20,6 +20,10 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         title = "The List"
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: ViewController.reuseId)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        fetchData()
     }
     
     // MARK: - Add name button
@@ -31,7 +35,7 @@ class ViewController: UIViewController {
                                        style: .default) { [unowned self] action in
             guard let textField = alert.textFields?.first,
                   let nameToSave = textField.text else { return }
-//            self.people.append(<#T##newElement: NSManagedObject##NSManagedObject#>)
+            //            self.people.append(<#T##newElement: NSManagedObject##NSManagedObject#>)
             self.save(name: nameToSave)
             self.tableView.reloadData()
         }
@@ -43,7 +47,19 @@ class ViewController: UIViewController {
         present(alert, animated: true)
     }
     
-    func save(name: String) {
+    private func fetchData() {
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
+        let manageContext = appDelegate.persistentContainer.viewContext
+        let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Person")
+        
+        do {
+            people = try manageContext.fetch(fetchRequest)
+        } catch let error as NSError {
+            print("Could not save. \(error), \(error.userInfo), \(error.localizedDescription)")
+        }
+    }
+    
+        private func save(name: String) {
         guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
         
         let managedContext = appDelegate.persistentContainer.viewContext
@@ -51,11 +67,17 @@ class ViewController: UIViewController {
         let person = NSManagedObject(entity: entity, insertInto: managedContext)
         person.setValue(name, forKey: "name")
         
+        do {
+            try managedContext.save()
+            people.append(person)
+        } catch let error as NSError {
+            print("Could not save. \(error), \(error.userInfo), \(error.localizedDescription)")
+        }
         
     }
 }
 
-    // MARK: - UITableViewDataSource
+// MARK: - UITableViewDataSource
 extension ViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return people.count
